@@ -1,18 +1,20 @@
 const series = require('run-series')
+const cloneDeep = require('clone-deep')
 
 var cache = {
     accounts: {},
     contents: {},
     changes: [],
     findOne: function(collection, query, cb) {
-        if (['accounts','blocks','contents'].indexOf(collection) == -1) {
+        if (['accounts','blocks','contents'].indexOf(collection) === -1) {
             cb(true)
             return
         }
         var key = cache.keyByCollection(collection)
         // searching in cache
         if (cache[collection][query[key]]) {
-            cb(null, cache[collection][query[key]])
+            let res = cloneDeep(cache[collection][query[key]])
+            cb(null, res)
             return
         }
         
@@ -26,54 +28,59 @@ var cache = {
                 }
                 // found, adding to cache
                 cache[collection][obj[key]] = obj
-                cb(null, obj)
+
+                // cloning the object before sending it
+                let res = cloneDeep(obj)
+                cb(null, res)
             }
         })
     },
     updateOne: function(collection, query, changes, cb) {
         cache.findOne(collection, query, function(err, obj) {
-            if (err) throw err;
+            if (err) throw err
             if (!obj) {
                 cb(null, false); return
             }
             var key = cache.keyByCollection(collection)
-            for (var c in changes) {
+            for (var c in changes) 
                 switch (c) {
-                    case '$inc':
-                        for (var i in changes[c]) {
-                            if (!cache[collection][obj[key]][i])
-                                cache[collection][obj[key]][i] = changes[c][i]
-                            else
-                                cache[collection][obj[key]][i] += changes[c][i]
-                        }
-                        break;
-
-                    case '$push':
-                        for (var i in changes[c]) {
-                            cache[collection][obj[key]][i].push(changes[c][i])
-                        }
-                        break;
-
-                    case '$pull':
-                        for (var i in changes[c]) {
-                            for (let y = 0; y < cache[collection][obj[key]][i].length; y++) {
-                                if (cache[collection][obj[key]][i][y] == changes[c][i]) {
-                                    cache[collection][obj[key]][i].splice(y, 1)
-                                }
-                            }
-                        }
-                        break;
-
-                    case '$set':
-                        for (var i in changes[c]) {
+                case '$inc':
+                    for (var i in changes[c]) 
+                        if (!cache[collection][obj[key]][i])
                             cache[collection][obj[key]][i] = changes[c][i]
-                        }
-                        break;
+                        else
+                            cache[collection][obj[key]][i] += changes[c][i]
+                    
+                    break
+
+                case '$push':
+                    for (var p in changes[c]) {
+                        if (!cache[collection][obj[key]][p])
+                            cache[collection][obj[key]][p] = []
+                        cache[collection][obj[key]][p].push(changes[c][p])
+                    }
+                    break
+
+                case '$pull':
+                    for (var l in changes[c]) 
+                        for (let y = 0; y < cache[collection][obj[key]][l].length; y++) 
+                            if (cache[collection][obj[key]][l][y] === changes[c][l]) 
+                                cache[collection][obj[key]][l].splice(y, 1)
+                            
+                        
+                    
+                    break
+
+                case '$set':
+                    for (var s in changes[c]) 
+                        cache[collection][obj[key]][s] = changes[c][s]
+                    
+                    break
                 
-                    default:
-                        break;
+                default:
+                    break
                 }
-            }
+            
             cache.changes.push({
                 collection: collection,
                 query: query,
@@ -84,13 +91,13 @@ var cache = {
     },
     updateMany: function(collection, query, changes, cb) {
         var key = cache.keyByCollection(collection)
-        if (!query[key] || !query[key]['$in']) {
+        if (!query[key] || !query[key]['$in']) 
             throw 'updateMany requires a $in operator'
-        }
+        
 
         var indexesToUpdate = query[key]['$in']
         var executions = []
-        for (let i = 0; i < indexesToUpdate.length; i++) {
+        for (let i = 0; i < indexesToUpdate.length; i++) 
             executions.push(function(callback) {
                 var newQuery = {}
                 newQuery[key] = indexesToUpdate[i]
@@ -98,7 +105,7 @@ var cache = {
                     callback(null, result)
                 })
             })
-        }
+        
         series(executions, function(err, results) {
             cb(err, results)
         })
@@ -121,8 +128,8 @@ var cache = {
             var key = change.query[cache.keyByCollection(collection)]
             docsToUpdate[collection][key] = cache[collection][key]
         }
-        for (const col in docsToUpdate) {
-            for (const i in docsToUpdate[col]) {
+        for (const col in docsToUpdate) 
+            for (const i in docsToUpdate[col]) 
                 executions.push(function(callback) {
                     var key = cache.keyByCollection(col)
                     var newDoc = docsToUpdate[col][i]
@@ -133,8 +140,8 @@ var cache = {
                         callback()
                     })
                 })
-            }
-        }
+            
+        
 
         // no operation compression (dumb and slow)
         // for (let i = 0; i < cache.changes.length; i++) {
@@ -155,13 +162,11 @@ var cache = {
     },
     keyByCollection: function(collection) {
         switch (collection) {
-            case 'accounts':
-                return 'name'
-                break;
+        case 'accounts':
+            return 'name'
         
-            default:
-                return '_id'
-                break;
+        default:
+            return '_id'
         }
     }
 }

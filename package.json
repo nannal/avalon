@@ -4,18 +4,24 @@
   "description": "",
   "scripts": {
     "start": "node src/main.js",
-    "cli": "node src/cli.js"
+    "cli": "node src/cli.js",
+    "lint": "eslint 'src/*.js'"
   },
   "dependencies": {
     "base-x": "^3.0.5",
     "body-parser": "^1.15.2",
+    "clone-deep": "^4.0.1",
+    "commander": "^2.20.0",
     "cors": "^2.8.5",
     "crypto-js": "^3.1.6",
     "decay": "^1.0.12",
     "express": "^4.16.4",
+    "growint": "^1.0.1",
     "log4js": "^3.0.6",
     "mongodb": "^3.2.2",
     "node-fetch": "^2.3.0",
+    "oembed-parser": "^1.2.2",
+    "open-graph-scraper": "^3.6.1",
     "run-series": "^1.1.8",
     "secp256k1": "^3.6.2",
     "signale": "^1.4.0",
@@ -38,5 +44,10 @@
     "underlinePrefix": false,
     "underlineSuffix": false,
     "uppercaseLabel": false
+  },
+  "devDependencies": {
+    "chance": "^1.0.18",
+    "eslint": "^5.16.0",
+    "javalon": "^1.0.7"
   }
 }
