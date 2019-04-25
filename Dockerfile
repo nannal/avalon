@@ -1,6 +1,6 @@
 FROM node:latest
 LABEL "project.home"="https://github.com/nannal/avalon"
-COPY ./
+COPY ./ /avalon
 WORKDIR /avalon
 RUN npm install
 EXPOSE 6001
