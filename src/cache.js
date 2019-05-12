@@ -2,9 +2,23 @@ const series = require('run-series')
 const cloneDeep = require('clone-deep')
 
 var cache = {
+    copy: {
+        accounts: {},
+        contents: {}
+    },
     accounts: {},
     contents: {},
     changes: [],
+    backup: function() {
+        cache.copy.accounts = cache.accounts
+        cache.copy.contents = cache.contents
+    },
+    rollback: function() {
+        cache.accounts = cache.copy.accounts
+        cache.contents = cache.copy.contents
+        cache.copy.accounts = {}
+        cache.copy.contents = {}
+    },
     findOne: function(collection, query, cb) {
         if (['accounts','blocks','contents'].indexOf(collection) === -1) {
             cb(true)
@@ -63,12 +77,19 @@ var cache = {
 
                 case '$pull':
                     for (var l in changes[c]) 
-                        for (let y = 0; y < cache[collection][obj[key]][l].length; y++) 
-                            if (cache[collection][obj[key]][l][y] === changes[c][l]) 
+                        for (let y = 0; y < cache[collection][obj[key]][l].length; y++)
+                            if (typeof changes[c][l] === 'object') {
+                                var matching = true
+                                for (const v in changes[c][l])
+                                    if (cache[collection][obj[key]][l][y][v] !== changes[c][l][v]) {
+                                        matching = false
+                                        break
+                                    }
+                                if (matching)
+                                    cache[collection][obj[key]][l].splice(y, 1)
+                            } else if (cache[collection][obj[key]][l][y] === changes[c][l]) 
                                 cache[collection][obj[key]][l].splice(y, 1)
                             
-                        
-                    
                     break
 
                 case '$set':
