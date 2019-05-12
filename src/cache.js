@@ -4,20 +4,35 @@ const cloneDeep = require('clone-deep')
 var cache = {
     copy: {
         accounts: {},
-        contents: {}
+        contents: {},
+        changes: [],
+        inserts: []
     },
     accounts: {},
     contents: {},
     changes: [],
+    inserts: [],
     backup: function() {
-        cache.copy.accounts = cache.accounts
-        cache.copy.contents = cache.contents
+        cache.copy = {
+            accounts: {},
+            contents: {},
+            changes: [],
+            inserts: []
+        }
+        cache.copy.accounts = cloneDeep(cache.accounts)
+        cache.copy.contents = cloneDeep(cache.contents)
+        cache.copy.contents = cloneDeep(cache.changes)
+        cache.copy.contents = cloneDeep(cache.inserts)
     },
     rollback: function() {
-        cache.accounts = cache.copy.accounts
-        cache.contents = cache.copy.contents
+        cache.accounts = cloneDeep(cache.copy.accounts)
+        cache.contents = cloneDeep(cache.copy.contents)
+        cache.changes = cloneDeep(cache.copy.changes)
+        cache.inserts = cloneDeep(cache.copy.inserts)
         cache.copy.accounts = {}
         cache.copy.contents = {}
+        cache.copy.changes = []
+        cache.copy.inserts = []
     },
     findOne: function(collection, query, cb) {
         if (['accounts','blocks','contents'].indexOf(collection) === -1) {
@@ -131,13 +146,36 @@ var cache = {
             cb(err, results)
         })
     },
+    insertOne: function(collection, document, cb) {
+        var key = cache.keyByCollection(collection)
+        if (cache[collection][document[key]]) {
+            cb(null, false); return
+        }
+        cache[collection][document[key]] = document
+        cache.inserts.push({
+            collection: collection,
+            document: document
+        })
+
+        cb(null, true)
+    },
     clear: function() {
         cache.accounts = {}
         cache.contents = {}
     },
     writeToDisk: function(cb) {
         var executions = []
-        // simple operation compression
+        // executing the inserts (new comment / new account)
+        for (let i = 0; i < cache.inserts.length; i++)
+            executions.push(function(callback) {
+                var insert = cache.inserts[i]
+                db.collection(insert.collection).insertOne(insert.document, function(err) {
+                    if (err) throw err
+                    callback()
+                })
+            })
+
+        // then the update with simple operation compression
         // 1 update per document concerned (even if no real change)
         var docsToUpdate = {
             accounts: {},
@@ -149,6 +187,7 @@ var cache = {
             var key = change.query[cache.keyByCollection(collection)]
             docsToUpdate[collection][key] = cache[collection][key]
         }
+
         for (const col in docsToUpdate) 
             for (const i in docsToUpdate[col]) 
                 executions.push(function(callback) {
@@ -161,8 +200,6 @@ var cache = {
                         callback()
                     })
                 })
-            
-        
 
         // no operation compression (dumb and slow)
         // for (let i = 0; i < cache.changes.length; i++) {
@@ -173,12 +210,13 @@ var cache = {
         //         })
         //     })
         // }
-
+        
         //var timeBefore = new Date().getTime()
         series(executions, function(err, results) {
             //logr.debug(executions.length+' mongo update executed in '+(new Date().getTime()-timeBefore)+'ms')
             cb(err, results)
             cache.changes = []
+            cache.inserts = []
         })
     },
     keyByCollection: function(collection) {
