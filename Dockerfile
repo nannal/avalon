@@ -1,4 +1,4 @@
-FROM node:latest
+FROM node:lts-jessie
 LABEL "project.home"="https://github.com/nannal/avalon"
 COPY ./ /avalon
 WORKDIR /avalon
