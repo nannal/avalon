@@ -1,5 +1,3 @@
-var TransactionType = require('../transactions').Types
-
 module.exports = {
     fields: ['link', 'pa', 'pp', 'json', 'vt', 'tag', 'burn'],
     validate: (tx, ts, legitUser, cb) => {
@@ -14,7 +12,7 @@ module.exports = {
             }
             // then verify that the same comment without promotion would be ok
             var comment = {
-                type: TransactionType.COMMENT,
+                type: 4,
                 data: Object.assign({}, tx.data)
             }
             delete comment.data.burn
@@ -44,7 +42,6 @@ module.exports = {
             ts: ts,
             vt: tx.data.vt+(tx.data.burn * config.vtPerBurn) // we just add some extra VTs
         }
-        if (tx.data.tag) superVote.tag = tx.data.tag
         var newContent = {
             _id: tx.sender+'/'+tx.data.link,
             author: tx.sender,
@@ -56,9 +53,15 @@ module.exports = {
             votes: [superVote],
             ts: ts
         }
+        if (tx.data.tag)  {
+            if (tx.data.tag) superVote.tag = tx.data.tag
+            newContent.tags = {}
+            newContent.tags[tx.data.tag] = superVote.vt
+        }
         // and burn some coins, update bw/vt and leader vote scores as usual
         cache.updateOne('accounts', {name: tx.sender}, {$inc: {balance: -tx.data.burn}}, function() {
             cache.findOne('accounts', {name: tx.sender}, function(err, sender) {
+                sender.balance += tx.data.burn
                 transaction.updateGrowInts(sender, ts, function() {
                     transaction.adjustNodeAppr(sender, -tx.data.burn, function() {
                         // insert content+vote into db
@@ -68,7 +71,7 @@ module.exports = {
                                     child: [tx.sender, tx.data.link]
                                 }}, function() {})
                             else 
-                                http.newRankingContent(newContent)
+                                rankings.new(newContent)
                             
                             // and report how much was burnt
                             cb(true, null, tx.data.burn)

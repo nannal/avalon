@@ -159,6 +159,9 @@ chain = {
                     // and broadcast to peers (if not replaying)
                     if (!p2p.recovering)
                         p2p.broadcastBlock(newBlock)
+
+                    // process notifications (non blocking)
+                    notifications.processBlock(newBlock)
                     cb(null, newBlock)
                 })
             })
@@ -522,21 +525,23 @@ chain = {
                 logr.debug('error growing grow int', account, ts)
             
             newVt.v += config.leaderRewardVT
-            cache.updateOne('accounts', 
-                {name: account.name},
-                {$set: {
-                    vt: newVt,
-                    balance: newBalance
-                }},
-                function(err) {
-                    if (err) throw err
-                    account.balance = newBalance
-                    transaction.updateGrowInts(account, ts, function() {
-                        transaction.adjustNodeAppr(account, config.leaderReward, function() {
-                            cb(config.leaderReward)
+
+            if (config.leaderReward > 0 && config.leaderRewardVT > 0)
+                cache.updateOne('accounts', 
+                    {name: account.name},
+                    {$set: {
+                        vt: newVt,
+                        balance: newBalance
+                    }},
+                    function(err) {
+                        if (err) throw err
+                        transaction.updateGrowInts(account, ts, function() {
+                            transaction.adjustNodeAppr(account, config.leaderReward, function() {
+                                cb(config.leaderReward)
+                            })
                         })
                     })
-                })
+            else cb(0)
         })
     },
     calculateHashForBlock: (block) => {

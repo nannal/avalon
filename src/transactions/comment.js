@@ -63,7 +63,7 @@ module.exports = {
                 }, function(){
                     content.json = tx.data.json
                     if (!tx.data.pa && !tx.data.pp)
-                        http.newRankingContent(content)
+                        rankings.new(content)
                     cb(true)
                 })
             else {
@@ -73,7 +73,7 @@ module.exports = {
                     ts: ts,
                     vt: tx.data.vt
                 }
-                if (tx.data.tag) vote.tag = tx.data.tag
+                
                 var newContent = {
                     _id: tx.sender+'/'+tx.data.link,
                     author: tx.sender,
@@ -85,13 +85,18 @@ module.exports = {
                     votes: [vote],
                     ts: ts
                 }
+                if (tx.data.tag)  {
+                    if (tx.data.tag) vote.tag = tx.data.tag
+                    newContent.tags = {}
+                    newContent.tags[tx.data.tag] = vote.vt
+                }
                 cache.insertOne('contents', newContent, function(){
                     if (tx.data.pa && tx.data.pp) 
                         cache.updateOne('contents', {_id: tx.data.pa+'/'+tx.data.pp}, { $push: {
                             child: [tx.sender, tx.data.link]
                         }}, function() {})
                     else 
-                        http.newRankingContent(newContent)
+                        rankings.new(newContent)
                     
                     cb(true)
                 })
