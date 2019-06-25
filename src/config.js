@@ -17,7 +17,7 @@ var config = {
             // the base58 encoding alphabet
             b58Alphabet: '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz',
             // the start time of the chain
-            block0ts: 1554643902092,
+            block0ts: 1561389814000,
             // the block time in ms
             blockTime: 3000,
             // the number of ms needed for 0.01 DTC to generate 1 byte of bw
@@ -56,7 +56,7 @@ var config = {
             // if false master can create accounts with usernames without burning tokens
             masterPaysForUsernames: false,
             // the master account public original key
-            masterPub: 'ngruo84YEunp8JjJv2xqA2GBCRPuF7nqWkccJ27X6je8',
+            masterPub: 'uxJ25PC95cb3xjqacMrhmiv5ChKHJnVHzkwBnQFEXs6i',
             // the maximum time drift in ms before a transaction is invalid
             maxDrift: 200,
             // the max length of a transfer memo
@@ -68,7 +68,7 @@ var config = {
             // the maximum number of mentions triggering a notification
             notifMaxMentions: 10,
             // the fake hash of block 0 (new origin hash -> new chain)
-            originHash: '0000000000000000000000000000000000000000000000000000000000000034',
+            originHash: '0000000000000000000000000000000000000000000000000000000000000035',
             randomBytesLength: 32,
             // the minimum hourly reward pool (including leader rewards)
             rewardPoolMin: 1,
@@ -91,7 +91,7 @@ var config = {
             },
             // the number of ms needed for 0.01 DTC to generate 1 vt
             vtGrowth: 360000000, // +1 vt per hour per DTC
-            vtPerBurn: 10 // can be updated in the future to modify incentives
+            vtPerBurn: 6 // can be updated in the future to modify incentives
         },
         // example hardforks
         // 2100: {
