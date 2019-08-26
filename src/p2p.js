@@ -94,6 +94,7 @@ var p2p = {
         ws.on('message', (data) => {
             //var user = p2p.sockets[p2p.sockets.indexOf(ws)].node_status ? p2p.sockets[p2p.sockets.indexOf(ws)].node_status.owner : 'unknown'
             //logr.trace('P2P-IN:', user, data)
+            p2p.sockets[p2p.sockets.indexOf(ws)].lastMessageTime = new Date().getTime()
             try {
                 var message = JSON.parse(data)
             } catch(e) {

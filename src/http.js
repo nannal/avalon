@@ -89,6 +89,9 @@ var http = {
                 if (p2p.sockets[i].node_status)
                     peer.node_status = p2p.sockets[i].node_status
 
+                if (p2p.sockets[i].lastMessageTime)
+                    peer.lastMessageTime = new Date().getTime() - p2p.sockets[i].lastMessageTime
+                
                 peers.push(peer)
             }
             res.send(peers)
