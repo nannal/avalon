@@ -19,6 +19,10 @@ var http = {
             var blockNumber = parseInt(req.params.number)
             db.collection('blocks').findOne({_id: blockNumber}, function(err, block) {
                 if (err) throw err
+                if (!block) {
+                    res.sendStatus(404)
+                    return
+                }
                 res.send(block)
             })
         })
@@ -85,6 +89,9 @@ var http = {
                 if (p2p.sockets[i].node_status)
                     peer.node_status = p2p.sockets[i].node_status
 
+                if (p2p.sockets[i].lastMessageTime)
+                    peer.lastMessageTime = new Date().getTime() - p2p.sockets[i].lastMessageTime
+                
                 peers.push(peer)
             }
             res.send(peers)
@@ -118,6 +125,7 @@ var http = {
 
         // get in-memory data (intensive)
         app.get('/cache', (req,res) => {
+            //res.send(Object.keys(cache.accounts).length+' '+Object.keys(cache.contents).length)
             res.send(cache)
         })
         app.get('/cacheb', (req,res) => {
@@ -178,6 +186,10 @@ var http = {
                     {author: req.params.author}, 
                     {link: req.params.link}
                 ]}, function(err, content) {
+                if (!content) {
+                    res.sendStatus(404)
+                    return
+                }
                 db.collection('contents').find({
                     $and: [
                         {pa: null},

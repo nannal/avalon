@@ -56,11 +56,19 @@ var mongo = {
     fillInMemoryBlocks: (cb) => {
         db.collection('blocks').find({}, {
             sort: {_id: -1},
-            limit: config.ecoBlocks
+            limit: config.ecoBlocksIncreasesSoon ? config.ecoBlocksIncreasesSoon : config.ecoBlocks
         }).toArray(function(err, blocks) {
             if (err) throw err
             chain.recentBlocks = blocks.reverse()
             cb()
+        })
+    },
+    lastBlock: (cb) => {
+        db.collection('blocks').findOne({}, {
+            sort: {_id: -1}
+        }, function(err, block) {
+            if (err) throw err
+            cb(block)
         })
     }
 } 
